@@ -87,6 +87,26 @@ You can change this directory by setting the git config `ignore.path`:
 git config --global ignore.path /path/to/your/gitignore
 ```
 
+## Development
+
+Clone repository:
+
+```sh
+gh repo clone r4ai/git-ignore
+```
+
+Build and install `git-ignore` from local repositories.
+
+```sh
+cargo install --path .
+```
+
+Register it as a subcommand of git:
+
+```sh
+git-ignore --register
+```
+
 ## LICENSE
 
 MIT License

@@ -1,8 +1,0 @@
-[tasks.build]
-command = "cargo"
-args = ["build", "--release"]
-
-[tasks.install]
-command = "sudo"
-args = ["sh", "scripts/install.sh"]
-dependencies = ["build"]
