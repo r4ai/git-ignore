@@ -232,7 +232,13 @@ fn main() {
     let config = Config::new().unwrap();
 
     let ignore_data = load_gitignore(&config.gitignore_path).unwrap();
-    let gitignore = gen_gitignore(&ignore_data, args).unwrap();
+    let gitignore = match gen_gitignore(&ignore_data, args) {
+        Ok(gitignore) => gitignore,
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
+    };
 
     println!("{}", gitignore);
 }
