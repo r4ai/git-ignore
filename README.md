@@ -1,7 +1,5 @@
 <div align="center">
-  <br>
   <img src=".github/assets/logo.png" width="300" />
-  <br>
   <h1>git-ignore</h1>
   <p>
     A git subcommand to generate .gitignore files.
@@ -71,8 +69,8 @@ git ignore --completion zsh > ~/.zsh/completions/_git-ignore
 This will enable completion for `git ignore` subcommand.
 
 > [!WARNING]
-> `~/.zsh/completions` have to be in your `$fpath`. Change this path if necessary.
-> To check if it is in your `$fpath`, run `echo $fpath`.
+> `~/.zsh/completions` have to be in your `$fpath`. Change this path if necessary.  
+> To check if it is in your `$fpath`, run `echo $fpath`.  
 > If you don't have `~/.zsh/completions`, create it and add the following line to your `~/.zshrc`:
 >
 > ```sh
@@ -81,7 +79,9 @@ This will enable completion for `git ignore` subcommand.
 
 ## Configuration
 
-This command generates `.gitignore` based on the local directory. By default, this directory is `/home/alice/.local/share/gitignore`, where the repository at [github/gitignore](https://github.com/github/gitignore) is cloned. You can change this directory by setting the git config `ignore.path`:
+This command generates `.gitignore` based on the local directory.  
+By default, this directory is `/home/alice/.local/share/gitignore`, where the repository at [github/gitignore](https://github.com/github/gitignore) is cloned.  
+You can change this directory by setting the git config `ignore.path`:
 
 ```sh
 git config --global ignore.path /path/to/your/gitignore
