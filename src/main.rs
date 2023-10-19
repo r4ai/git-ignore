@@ -98,10 +98,11 @@ fn help() -> String {
         "    $ git config --global ignore.path <path>",
         "",
         "Options:",
-        "  -h, --help       Print this help message",
-        "  -V, --version    Print version info and exit",
-        "      --repo       Print gitignore repository path and exit",
-        "      --list       List all available gitignore files",
+        "  -h, --help                       Print this help message",
+        "  -V, --version                    Print version information and exit",
+        "      --repo                       Print gitignore repository path and exit",
+        "      --list                       List all available gitignore files",
+        "  -c, --completion <bash|zsh|fish> Generate completion script for bash, zsh or fish",
     ]
     .join("\n")
 }
@@ -135,6 +136,28 @@ fn main() {
         let ignore_data = load_gitignore(&config.gitignore_path).unwrap();
         for (name, _) in ignore_data {
             println!("{}", name);
+        }
+        return;
+    }
+    if args[0] == "-c" || args[0] == "--completion" {
+        fn shell_help() -> String {
+            [
+                "Please specify correct shell name.",
+                "",
+                "Usage:   git ignore --completion <bash|zsh|fish>",
+                "Example: git ignore --completion bash",
+            ]
+            .join("\n")
+        }
+        let Some(shell) = args.get(1) else {
+            println!("{}", shell_help());
+            return;
+        };
+        match shell.as_str() {
+            "bash" => {}
+            "zsh" => {}
+            "fish" => println!("{}", include_str!("fish_completions.fish")),
+            _ => println!("{}", shell_help()),
         }
         return;
     }
