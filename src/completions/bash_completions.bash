@@ -4,7 +4,7 @@ _git_ignore_complete() {
   prev="${COMP_WORDS[COMP_CWORD - 1]}"
 
   # Command options
-  opts="-h --help -V --version --repo --list -c --completion"
+  opts="-h --help -V --version --repo --list -c --completion --register"
 
   case "${prev}" in
   git)

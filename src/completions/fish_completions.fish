@@ -13,3 +13,4 @@ complete -c git -n '__fish_git_using_command ignore' -l list -d 'List all availa
 complete -c git -n '__fish_git_using_command ignore' -s c -l completion -xa bash -d 'Generate completion script for bash'
 complete -c git -n '__fish_git_using_command ignore' -s c -l completion -xa zsh -d 'Generate completion script for zsh'
 complete -c git -n '__fish_git_using_command ignore' -s c -l completion -xa fish -d 'Generate completion script for fish'
+complete -c git -n '__fish_git_using_command ignore' -l register -d 'Register `git-ignore` command as git subcommand'

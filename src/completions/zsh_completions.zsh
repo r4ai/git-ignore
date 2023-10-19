@@ -20,7 +20,8 @@ _git-ignore() {
         '--version[Print version information and exit]' \
         '--repo[Print gitignore repository path and exit]' \
         '--list[List all available gitignore files]' \
-        '-c[Generate completion script for bash, zsh or fish]:completion script:(bash zsh fish)'
+        '-c[Generate completion script for bash, zsh or fish]:completion script:(bash zsh fish)' \
+        '--register[Register `git-ignore` command as git subcommand]'
       ;;
     (subcmd)
       compadd "$@" $lang_list

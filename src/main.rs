@@ -2,7 +2,9 @@ mod config;
 
 use crate::config::Config;
 use anyhow::{anyhow, Result};
-use std::{collections::HashMap, env, ffi::OsStr, fs, path::Path, process::Command};
+use std::{
+    collections::HashMap, env, ffi::OsStr, fs, io, os, path::Path, process::Command, slice::Windows,
+};
 use walkdir::{DirEntry, WalkDir};
 
 fn is_git(entry: &DirEntry) -> bool {
@@ -103,33 +105,30 @@ fn help() -> String {
         "      --repo                       Print gitignore repository path and exit",
         "      --list                       List all available gitignore files",
         "  -c, --completion <bash|zsh|fish> Generate completion script for bash, zsh or fish",
+        "      --register                   Register `git-ignore` command as git subcommand",
     ]
     .join("\n")
 }
 
-fn main() {
-    let commandline_args: Vec<String> = env::args().collect();
-    if commandline_args.len() < 2 {
-        println!("{}", help());
-        return;
-    }
+enum ParseResult {
+    Continue,
+    Break,
+}
 
-    // get args from commandline
-    let args = &commandline_args[1..];
-
+fn parse_args(args: &[String]) -> Result<ParseResult> {
     // check args options
     if args[0] == "--help" || args[0] == "-h" {
         println!("{}", help());
-        return;
+        return Ok(ParseResult::Break);
     }
     if args[0] == "--version" || args[0] == "-V" {
         println!("git-ignore v{}", env!("CARGO_PKG_VERSION"));
-        return;
+        return Ok(ParseResult::Break);
     }
     if args[0] == "--repo" {
         let config = Config::new().unwrap();
         println!("{}", config.gitignore_path.display());
-        return;
+        return Ok(ParseResult::Break);
     }
     if args[0] == "--list" {
         let config = Config::new().unwrap();
@@ -137,7 +136,7 @@ fn main() {
         for (name, _) in ignore_data {
             println!("{}", name);
         }
-        return;
+        return Ok(ParseResult::Break);
     }
     if args[0] == "-c" || args[0] == "--completion" {
         fn shell_help() -> String {
@@ -151,7 +150,7 @@ fn main() {
         }
         let Some(shell) = args.get(1) else {
             println!("{}", shell_help());
-            return;
+            return Ok(ParseResult::Break);
         };
         match shell.as_str() {
             "bash" => println!("{}", include_str!("completions/bash_completions.bash")),
@@ -159,7 +158,75 @@ fn main() {
             "fish" => println!("{}", include_str!("completions/fish_completions.fish")),
             _ => println!("{}", shell_help()),
         }
+        return Ok(ParseResult::Break);
+    }
+    if args[0] == "--register" {
+        let output = Command::new("git").args(["--exec-path"]).output().unwrap();
+        let git_exec_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let git_subcommand_path = Path::new(&git_exec_path).join("git-ignore");
+
+        if git_subcommand_path.exists() {
+            if git_subcommand_path.is_file() {
+                match fs::remove_file(&git_subcommand_path) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        if err.kind() == io::ErrorKind::PermissionDenied {
+                            let msg = [
+                                "Failed to register git-ignore command.",
+                                "Please run this command as root user.",
+                                "Example:",
+                                "    $ sudo git-ignore --register",
+                            ]
+                            .join("\n");
+                            return Err(anyhow!(msg));
+                        }
+                        return Err(err.into());
+                    }
+                }
+            } else {
+                return Err(anyhow!(
+                    "Failed to register git-ignore command.\n{} is already exists.\nPlease remove it manually to register the command.",
+                    git_subcommand_path.display()
+                ));
+            }
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            os::windows::fs::symlink_file(env::current_exe().unwrap(), git_subcommand_path)
+                .expect("Failed to register git-ignore command.")
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            os::unix::fs::symlink(env::current_exe().unwrap(), git_subcommand_path)
+                .expect("Failed to register git-ignore command.")
+        }
+
+        println!("Successfully registered git-ignore command.");
+        return Ok(ParseResult::Break);
+    }
+
+    Ok(ParseResult::Continue)
+}
+
+fn main() {
+    let commandline_args: Vec<String> = env::args().collect();
+    if commandline_args.len() < 2 {
+        println!("{}", help());
         return;
+    }
+
+    let args = &commandline_args[1..];
+    match parse_args(args) {
+        Ok(ParseResult::Continue) => {}
+        Ok(ParseResult::Break) => {
+            return;
+        }
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
     }
 
     let config = Config::new().unwrap();
