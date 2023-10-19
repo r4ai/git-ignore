@@ -155,7 +155,7 @@ fn main() {
         };
         match shell.as_str() {
             "bash" => println!("{}", include_str!("completions/bash_completions.bash")),
-            "zsh" => {}
+            "zsh" => println!("{}", include_str!("completions/zsh_completions.zsh")),
             "fish" => println!("{}", include_str!("completions/fish_completions.fish")),
             _ => println!("{}", shell_help()),
         }
