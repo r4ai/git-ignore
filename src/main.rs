@@ -1,26 +1,23 @@
-use std::{
-    collections::HashMap,
-    env,
-    ffi::OsStr,
-    fs,
-    path::{Path, PathBuf},
-    process::Command,
-};
+mod config;
 
+use crate::config::Config;
 use anyhow::{anyhow, Result};
-use dirs::data_dir;
+use std::{collections::HashMap, env, ffi::OsStr, fs, path::Path, process::Command};
 use walkdir::{DirEntry, WalkDir};
 
 fn is_git(entry: &DirEntry) -> bool {
     entry.file_name() == ".git" || entry.file_name() == ".github"
 }
 
-fn get_file_name(entry: &DirEntry) -> Option<String> {
+fn get_file_name_without_extension(entry: &DirEntry) -> Option<String> {
     Some(entry.path().file_stem()?.to_str()?.to_string())
 }
 
 type IgnoreMap = HashMap<String, String>;
 
+/// Initialize gitignore repository
+/// - If `config.gitignore_path` exists, do nothing.
+/// - Otherwise, clone gitignore repository to `config.gitignore_path`.
 fn init_gitignore(path: &Path) -> Result<()> {
     if path.exists() {
         return Ok(());
@@ -42,6 +39,7 @@ fn init_gitignore(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Load gitignore files recursively from `config.gitignore_path`
 fn load_gitignore(path: &Path) -> Result<IgnoreMap> {
     init_gitignore(path)?;
     let mut data: HashMap<String, String> = HashMap::new();
@@ -54,7 +52,7 @@ fn load_gitignore(path: &Path) -> Result<IgnoreMap> {
         }
 
         // insert file name and content to data
-        let Some(file_name) = get_file_name(&entry) else {
+        let Some(file_name) = get_file_name_without_extension(&entry) else {
             continue;
         };
         let file_path = entry.path().display().to_string();
@@ -64,6 +62,7 @@ fn load_gitignore(path: &Path) -> Result<IgnoreMap> {
     Ok(data)
 }
 
+/// Generate gitignore file specified by args
 fn gen_gitignore(data: &IgnoreMap, args: &[String]) -> Result<String> {
     let mut gitignore = String::new();
 
@@ -102,47 +101,9 @@ fn help() -> String {
         "  -h, --help       Print this help message",
         "  -V, --version    Print version info and exit",
         "      --repo       Print gitignore repository path and exit",
-        "      --config     (WIP) Print config info and exit",
         "      --list       List all available gitignore files",
     ]
     .join("\n")
-}
-
-#[derive(Debug)]
-struct Config {
-    gitignore_path: PathBuf,
-}
-
-impl Config {
-    pub fn new() -> Result<Self> {
-        // default config
-        let mut config = Config {
-            gitignore_path: data_dir().unwrap().join("gitignore"),
-        };
-
-        // load config from git config
-        config.load()?;
-
-        Ok(config)
-    }
-
-    fn load_git_config(key: &str) -> String {
-        let output = Command::new("git")
-            .args(["config", "--get", key])
-            .output()
-            .unwrap();
-        String::from_utf8_lossy(&output.stdout).to_string()
-    }
-
-    pub fn load(&mut self) -> Result<()> {
-        // load ignore.path
-        let gitignore_path = Config::load_git_config("ignore.path");
-        if !gitignore_path.is_empty() {
-            self.gitignore_path = PathBuf::from(gitignore_path);
-        }
-
-        Ok(())
-    }
 }
 
 fn main() {
@@ -167,11 +128,6 @@ fn main() {
     if args[0] == "--repo" {
         let config = Config::new().unwrap();
         println!("{}", config.gitignore_path.display());
-        return;
-    }
-    if args[0] == "--config" {
-        let config = Config::new().unwrap();
-        println!("{:?}", config);
         return;
     }
     if args[0] == "--list" {
