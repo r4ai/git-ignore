@@ -2,9 +2,7 @@ mod config;
 
 use crate::config::Config;
 use anyhow::{anyhow, Result};
-use std::{
-    collections::HashMap, env, ffi::OsStr, fs, io, os, path::Path, process::Command, slice::Windows,
-};
+use std::{collections::HashMap, env, ffi::OsStr, fs, io, os, path::Path, process::Command};
 use walkdir::{DirEntry, WalkDir};
 
 fn is_git(entry: &DirEntry) -> bool {
