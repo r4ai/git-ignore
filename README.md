@@ -17,7 +17,7 @@ cargo install git-ignore --git https://github.com/r4ai/git-ignore
 And then, register it as a subcommand of git:
 
 ```sh
-git-ignore --register
+sudo git-ignore --register
 ```
 
 ## Usage
