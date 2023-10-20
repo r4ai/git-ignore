@@ -6,6 +6,12 @@
   </p>
 </div>
 
+## Features
+
+- Generate .gitignore based on the contents of the local directory. (by default, the contents of [github/gitignore](https://github.com/github/gitignore) are used)
+- Completion in Fish, Bash, Zsh
+- Works on Linux, Windows, MacOS
+
 ## Installation
 
 Install `git-ignore` with cargo:
