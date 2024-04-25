@@ -85,12 +85,28 @@ This will enable completion for `git ignore` subcommand.
 
 ## Configuration
 
-This command generates `.gitignore` based on the local directory.  
-By default, this directory is `/home/alice/.local/share/gitignore`, where the repository at [github/gitignore](https://github.com/github/gitignore) is cloned.  
-You can change this directory by setting the git config `ignore.path`:
+This command generates `.gitignore` based on the local directory.
+
+By default, this directory is `/home/alice/.local/share/gitignore`, where the repository at [github/gitignore](https://github.com/github/gitignore) is cloned. You can also check the path of this directory with `git ignore --repo`.
+
+To change the path of this directory, you need to change `ignore.path` in git config.
 
 ```sh
 git config --global ignore.path /path/to/your/gitignore
+```
+
+For example, if you want to use [toptal/gitignore](https://github.com/toptal/gitignore/) instead of [github/gitignore](https://github.com/github/gitignore), simply clone [toptal/gitignore](https://github.com/toptal/gitignore/) to `/home/alice/.local/share/gitignore`:
+
+```sh
+$ git ignore --repo 
+/home/alice/.local/share/gitignore
+
+$ cd /home/alice/.local/share
+
+$ rm -rf ./gitignore
+
+$ gh repo clone toptal/gitignore
+
 ```
 
 ## Development
