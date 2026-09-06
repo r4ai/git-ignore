@@ -3,10 +3,12 @@ use std::{
     process::{self, Command},
 };
 
-#[test]
-fn repo_option_prints_configured_path_once() {
-    let config_path = env::temp_dir().join(format!("git-ignore-config-{}", process::id()));
-    let repo_path = env::temp_dir().join(format!("git ignore repository {}", process::id()));
+fn assert_repo_path(case: &str, suffix: &str) {
+    let config_path = env::temp_dir().join(format!("git-ignore-{case}-config-{}", process::id()));
+    let repo_path = env::temp_dir().join(format!(
+        "git ignore {case} repository {}{suffix}",
+        process::id()
+    ));
     let configured = Command::new("git")
         .args(["config", "--file"])
         .arg(&config_path)
@@ -30,4 +32,15 @@ fn repo_option_prints_configured_path_once() {
         output.stdout,
         format!("{}\n", repo_path.display()).as_bytes()
     );
+}
+
+#[test]
+fn repo_option_prints_configured_path_once() {
+    assert_repo_path("ordinary", "");
+}
+
+#[cfg(unix)]
+#[test]
+fn repo_option_preserves_configured_line_breaks() {
+    assert_repo_path("line-break", "\r\n");
 }
