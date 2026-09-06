@@ -20,10 +20,14 @@ impl Config {
 
     fn load_git_config(key: &str) -> String {
         let output = Command::new("git")
-            .args(["config", "--get", key])
+            .args(["config", "--null", "--get", key])
             .output()
             .unwrap();
-        String::from_utf8_lossy(&output.stdout).to_string()
+        let value = String::from_utf8_lossy(&output.stdout);
+        value
+            .strip_suffix('\0')
+            .unwrap_or(value.as_ref())
+            .to_string()
     }
 
     pub fn load(&mut self) -> Result<()> {
