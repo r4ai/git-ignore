@@ -23,7 +23,9 @@ impl Config {
             .args(["config", "--get", key])
             .output()
             .unwrap();
-        String::from_utf8_lossy(&output.stdout).to_string()
+        String::from_utf8_lossy(&output.stdout)
+            .trim_end_matches(['\r', '\n'])
+            .to_string()
     }
 
     pub fn load(&mut self) -> Result<()> {
