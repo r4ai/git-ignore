@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.82"
-dirs = "6.0.0"
+dirs = "7.0.0"
 walkdir = "2.5.0"
