@@ -2,7 +2,14 @@ mod config;
 
 use crate::config::Config;
 use anyhow::{anyhow, Context, Result};
-use std::{collections::HashMap, env, ffi::OsStr, fs, io, os, path::Path, process::Command};
+use std::{
+    collections::HashMap,
+    env,
+    ffi::OsStr,
+    fs, io, os,
+    path::Path,
+    process::{self, Command},
+};
 use walkdir::{DirEntry, WalkDir};
 
 fn is_git(entry: &DirEntry) -> bool {
@@ -23,7 +30,26 @@ fn init_gitignore(path: &Path) -> Result<()> {
         return Ok(());
     }
 
-    // clone gitignore repository
+    let mut staging_name = path
+        .file_name()
+        .unwrap_or_else(|| OsStr::new("gitignore"))
+        .to_os_string();
+    staging_name.push(format!(".tmp-{}", process::id()));
+    let staging_path = path.with_file_name(staging_name);
+    fs::create_dir(&staging_path).context("Failed to create clone staging directory")?;
+
+    let result = clone_gitignore(&staging_path).and_then(|()| {
+        fs::rename(&staging_path, path).context("Failed to install cloned gitignore repository")
+    });
+    if result.is_err() {
+        fs::remove_dir_all(&staging_path)
+            .context("Failed to clean up incomplete gitignore repository")?;
+    }
+
+    result
+}
+
+fn clone_gitignore(path: &Path) -> Result<()> {
     let output = Command::new("git")
         .args(["clone", "https://github.com/github/gitignore.git"])
         .arg(path)
@@ -32,10 +58,6 @@ fn init_gitignore(path: &Path) -> Result<()> {
 
     if output.status.success() {
         return Ok(());
-    }
-
-    if path.exists() {
-        fs::remove_dir_all(path).context("Failed to clean up incomplete gitignore repository")?;
     }
 
     Err(anyhow!(
