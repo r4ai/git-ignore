@@ -1,7 +1,7 @@
 mod config;
 
 use crate::config::Config;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use std::{collections::HashMap, env, ffi::OsStr, fs, io, os, path::Path, process::Command};
 use walkdir::{DirEntry, WalkDir};
 
@@ -23,20 +23,25 @@ fn init_gitignore(path: &Path) -> Result<()> {
         return Ok(());
     }
 
-    // create gitignore directory
-    fs::create_dir(path)?;
-
     // clone gitignore repository
-    Command::new("git")
-        .args([
-            "clone",
-            "https://github.com/github/gitignore.git",
-            path.display().to_string().as_str(),
-        ])
+    let output = Command::new("git")
+        .args(["clone", "https://github.com/github/gitignore.git"])
+        .arg(path)
         .output()
-        .unwrap_or_else(|_| panic!("Failed to clone gitignore repository.\nExecuted command: `git clone https://github.com/github/gitignore.git {}`", path.display()));
+        .context("Failed to execute git clone")?;
 
-    Ok(())
+    if output.status.success() {
+        return Ok(());
+    }
+
+    if path.exists() {
+        fs::remove_dir_all(path).context("Failed to clean up incomplete gitignore repository")?;
+    }
+
+    Err(anyhow!(
+        "Failed to clone gitignore repository: {}",
+        String::from_utf8_lossy(&output.stderr).trim()
+    ))
 }
 
 /// Load gitignore files recursively from `config.gitignore_path`
