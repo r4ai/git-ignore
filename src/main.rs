@@ -1,8 +1,15 @@
 mod config;
 
 use crate::config::Config;
-use anyhow::{anyhow, Result};
-use std::{collections::HashMap, env, ffi::OsStr, fs, io, os, path::Path, process::Command};
+use anyhow::{anyhow, Context, Result};
+use std::{
+    collections::HashMap,
+    env,
+    ffi::OsStr,
+    fs, io, os,
+    path::Path,
+    process::{self, Command},
+};
 use walkdir::{DirEntry, WalkDir};
 
 fn is_git(entry: &DirEntry) -> bool {
@@ -23,20 +30,40 @@ fn init_gitignore(path: &Path) -> Result<()> {
         return Ok(());
     }
 
-    // create gitignore directory
-    fs::create_dir(path)?;
+    let mut staging_name = path
+        .file_name()
+        .unwrap_or_else(|| OsStr::new("gitignore"))
+        .to_os_string();
+    staging_name.push(format!(".tmp-{}", process::id()));
+    let staging_path = path.with_file_name(staging_name);
+    fs::create_dir(&staging_path).context("Failed to create clone staging directory")?;
 
-    // clone gitignore repository
-    Command::new("git")
-        .args([
-            "clone",
-            "https://github.com/github/gitignore.git",
-            path.display().to_string().as_str(),
-        ])
+    let result = clone_gitignore(&staging_path).and_then(|()| {
+        fs::rename(&staging_path, path).context("Failed to install cloned gitignore repository")
+    });
+    if result.is_err() {
+        fs::remove_dir_all(&staging_path)
+            .context("Failed to clean up incomplete gitignore repository")?;
+    }
+
+    result
+}
+
+fn clone_gitignore(path: &Path) -> Result<()> {
+    let output = Command::new("git")
+        .args(["clone", "https://github.com/github/gitignore.git"])
+        .arg(path)
         .output()
-        .unwrap_or_else(|_| panic!("Failed to clone gitignore repository.\nExecuted command: `git clone https://github.com/github/gitignore.git {}`", path.display()));
+        .context("Failed to execute git clone")?;
 
-    Ok(())
+    if output.status.success() {
+        return Ok(());
+    }
+
+    Err(anyhow!(
+        "Failed to clone gitignore repository: {}",
+        String::from_utf8_lossy(&output.stderr).trim()
+    ))
 }
 
 /// Load gitignore files recursively from `config.gitignore_path`
